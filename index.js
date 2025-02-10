@@ -11,7 +11,7 @@ app.use(bodyParser.json());
 app.use(morgan("dev"))
 app.use(cors())
 mongoose
-  .connect("mongodb+srv://proectnova:qIPaIQWO0z9BjGgB@cluster0.eu4py.mongodb.net/dmarg", {
+  .connect("mongodb+srv://proectnova:qIPaIQWO0z9BjGgB@cluster0.eu4py.mongodb.net/vmarg", {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
