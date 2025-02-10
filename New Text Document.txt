@@ -1,0 +1,156 @@
+import React, { useEffect, useState } from "react";
+import {
+  Box,
+  Radio,
+  FormControlLabel,
+  RadioGroup,
+  Typography,
+  Button,
+  Grid,
+  useMediaQuery,
+} from "@mui/material";
+import Layout from "../Layout/Layout";
+
+export default function Live() {
+  const [selectedDevice, setSelectedDevice] = useState("Tracker-001");
+  const [deviceData, setDeviceData] = useState({});
+  const isMobile = useMediaQuery("(max-width:600px)");
+  const isTablet = useMediaQuery("(max-width:960px)");
+
+  const deviceOptions = [
+    { value: "Tracker-001", label: "Tracker 001" },
+    { value: "Tracker-002", label: "Tracker 002" },
+    { value: "Tracker-003", label: "Tracker 003" },
+  ];
+
+  useEffect(() => {
+    const fetchDeviceData = async () => {
+      try {
+        const response = await fetch(`http://localhost:5000/realtime/${selectedDevice}`);
+        if (!response.ok) throw new Error("Network response was not ok");
+        const data = await response.json();
+        setDeviceData({
+          [selectedDevice]: {
+            lat: data.latitude,
+            lng: data.longitude,
+            lastUpdated: `${data.date} ${data.time}`,
+            found: true,
+          },
+        });
+      } catch (error) {
+        console.error("Error fetching device data:", error);
+        setDeviceData({ [selectedDevice]: { found: false } });
+      }
+    };
+
+    fetchDeviceData();
+    const interval = setInterval(fetchDeviceData, 5000);
+    return () => clearInterval(interval);
+  }, [selectedDevice]);
+
+  const getIframeSrc = (lat, lng) => {
+    return `https://maps.google.com/maps?q=${lat},${lng}&z=14&output=embed`;
+  };
+
+  const handleShare = (lat, lng) => {
+    const url = getIframeSrc(lat, lng);
+    window.open(url, "_blank");
+  };
+
+  return (
+    <Layout>
+      <Box sx={{ padding: 2 }}>
+        <Typography variant="h5" sx={{ marginBottom: 2 }}>
+          Live Device Tracker
+        </Typography>
+        <Grid container spacing={2}>
+          <Grid item xs={12} md={8}>
+            <Box sx={{ position: "relative", width: "100%", height: isMobile ? 300 : isTablet ? 400 : 600 }}>
+              <iframe
+                title="Device Map"
+                frameBorder="0"
+                scrolling="no"
+                marginHeight="0"
+                marginWidth="0"
+                src={getIframeSrc(
+                  deviceData[selectedDevice]?.lat || 20.5937,
+                  deviceData[selectedDevice]?.lng || 78.9629
+                )}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                }}
+              ></iframe>
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: 20,
+                  left: 20,
+                  backgroundColor: "rgba(255, 255, 255, 0.8)",
+                  padding: 2,
+                  borderRadius: 2,
+                  boxShadow: 3,
+                  zIndex: 10,
+                }}
+              >
+                <Typography variant="subtitle1" sx={{ marginBottom: 1 }}>
+                  Select Device
+                </Typography>
+                <RadioGroup
+                  value={selectedDevice}
+                  onChange={(e) => setSelectedDevice(e.target.value)}
+                >
+                  {deviceOptions.map((device) => (
+                    <FormControlLabel
+                      key={device.value}
+                      value={device.value}
+                      control={<Radio />}
+                      label={device.label}
+                    />
+                  ))}
+                </RadioGroup>
+              </Box>
+            </Box>
+          </Grid>
+
+          <Grid item xs={12} md={4}>
+            <Typography variant="h6" sx={{ marginBottom: 1 }}>
+              Device Info
+            </Typography>
+            <Box sx={{ marginBottom: 2 }}>
+              <Typography variant="subtitle1">{selectedDevice}</Typography>
+              {deviceData[selectedDevice]?.found === false ? (
+                <Typography variant="body2" color="error">
+                  Device not found.
+                </Typography>
+              ) : (
+                <>
+                  <Typography variant="body2">
+                    Latitude: {deviceData[selectedDevice]?.lat ?? "Loading..."}
+                  </Typography>
+                  <Typography variant="body2">
+                    Longitude: {deviceData[selectedDevice]?.lng ?? "Loading..."}
+                  </Typography>
+                  <Typography variant="body2">
+                    Last Updated: {deviceData[selectedDevice]?.lastUpdated ?? "Waiting for update..."}
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    sx={{ marginTop: 1 }}
+                    onClick={() =>
+                      handleShare(deviceData[selectedDevice]?.lat, deviceData[selectedDevice]?.lng)
+                    }
+                  >
+                    Share Location
+                  </Button>
+                </>
+              )}
+              <hr />
+            </Box>
+          </Grid>
+        </Grid>
+      </Box>
+    </Layout>
+  );
+}

@@ -20,14 +20,14 @@ mongoose
 
 
 
-const logSchema = new mongoose.Schema({
-  deviceName: { type: String, required: true },
-  latitude: { type: Number, required: true },
-  longitude: { type: Number, required: true },
-  date: { type: String, required: true }, // Store date as a string (e.g., "2025-02-06")
-  time: { type: String, required: true }, // Store time as a string (e.g., "14:30:00")
-});
-
+  const logSchema = new mongoose.Schema({
+    deviceName: { type: String, required: true },
+    latitude: { type: Number, required: true },
+    longitude: { type: Number, required: true },
+    date: { type: String, required: true }, // Format: "DD-MM-YYYY"
+    time: { type: String, required: true }  // Format: "HH:MM:SS"
+  });
+  
 const Log = mongoose.model("Log", logSchema);
 const Realtime = mongoose.model("Realtime", logSchema);
 
@@ -46,15 +46,7 @@ app.post("/logs", async (req, res) => {
   }
 });
 
-// Get Route (GET /logs)
-app.get("/logs", async (req, res) => {
-  try {
-    const logs = await Log.find(); // Fetch all logs
-    res.status(200).json(logs);
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching logs", error });
-  }
-});
+
 app.put("/realtime/:deviceName", async (req, res) => {
   try {
     const { deviceName } = req.params;
@@ -72,6 +64,57 @@ app.put("/realtime/:deviceName", async (req, res) => {
   }
 });
 
+app.get("/find/logs", async (req, res) => {
+  const { deviceName, fromDate, toDate, fromTime, toTime } = req.query;
+
+  try {
+    const query = { ...(deviceName && { deviceName }) };
+
+    if (fromDate && toDate) {
+      query.date = {
+        $gte: fromDate,
+        $lte: toDate
+      };
+    }
+
+    if (fromTime && toTime) {
+      query.time = {
+        $gte: fromTime,
+        $lte: toTime
+      };
+    }
+
+    console.log("Query:", query); // Debugging the query being sent
+
+    const logs = await Log.find(query).sort({ date: 1, time: 1 }).select("deviceName latitude longitude date time");
+
+    res.status(200).json(logs);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error fetching logs", error });
+  }
+});
+
+// Get Route (GET /logs)
+app.get("/logs", async (req, res) => {
+  try {
+    const logs = await Log.find(); // Fetch all logs
+    res.status(200).json(logs);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching logs", error });
+  }
+});
+
+
+app.get("/realtime/:deviceName",async(req,res)=>{
+
+  const deviceName = req.params.deviceName;
+
+  const result = await Realtime.findOne({deviceName:deviceName})
+
+
+  res.send(result)
+})
 
 app.listen(PORT, () => {
   console.log(`Server is running on Port ${PORT}`);
