@@ -116,6 +116,12 @@ app.get("/realtime/:deviceName",async(req,res)=>{
   res.send(result)
 })
 
+
+app.get("/ping",(req,res)=>{
+  res.send("We got Your Request")
+})
+
+
 app.listen(PORT, () => {
   console.log(`Server is running on Port ${PORT}`);
 });
