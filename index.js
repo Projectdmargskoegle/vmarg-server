@@ -126,5 +126,5 @@ app.get("/ping", (req, res) => {
 const server = http.createServer(app);
 
 server.listen(PORT, () => {
-  console.log(`Server is running on Port ${PORT} with HTTP/1.1`);
+  console.log(`Server is running on Port ${PORT} with HTTP/1.1 on TLS 1.0, 1.1`);
 });
